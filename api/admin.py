@@ -1,5 +1,5 @@
 from django.contrib import admin
-from api.models import CustomUser,Job
+from api.models import CustomUser,Job ,Contact
 from django.contrib.auth.admin import UserAdmin
 from django.forms import TextInput, Textarea, CharField
 from .models import Application,Job
@@ -63,3 +63,9 @@ admin.site.register(CustomUser, UserAdminConfig)
 
 
 
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'created_at')
+    search_fields = ('name', 'email')
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
