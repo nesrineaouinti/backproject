@@ -10,16 +10,6 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
-
-
-
-
-
-
-
-
-
-
 class CheckIfAdminWithRecievedAccessTokenView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication] #this will accept the access token sent from the front 
@@ -326,6 +316,32 @@ export default ApplicationActions; '''
 
 
 
+class ContactCreateView(APIView):
+    def post(self, request):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
+class JobApplicationStatsView(APIView):
 
+    def get(self, request):
+        total_jobs = Job.objects.count()
+        total_applications = Application.objects.count()
+        total_rejected = Application.objects.filter(status='rejected').count()
+        total_accepted = Application.objects.filter(status='accepted').count()
+        total_sent = Application.objects.filter(status='sent').count()
+        total_in_review = Application.objects.filter(status='in review').count()
 
+        data = {
+            'total_jobs': total_jobs,
+            'total_applications': total_applications,
+            'total_rejected': total_rejected,
+            'total_accepted': total_accepted,
+            'total_sent': total_sent,
+            'total_in_review': total_in_review,
+        }
+
+        return Response(data)

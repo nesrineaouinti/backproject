@@ -1,12 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,Job,Application
-
-
-
-
-
-
-
+from .models import CustomUser,Job,Application ,Contact
 
 class RegisterUserSerializer(serializers.ModelSerializer):  #this is for sending and receiving data! 
     class Meta:
@@ -94,5 +87,9 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
 
 
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'
 
 
