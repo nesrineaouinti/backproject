@@ -25,5 +25,5 @@ urlpatterns = [
     path('api/user/verifycode/', VerifyCodeView.as_view(), name='verify-code'),
     path('api/user/changepassword/', ResetPasswordView.as_view(), name='change-reset-password'),
 
-]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
    

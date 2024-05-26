@@ -120,4 +120,12 @@ class Application(models.Model):
         return f"{self.candidate.email} - {self.job.title}"
     
 
+class Contact(models.Model):
+       name = models.CharField(max_length=300)  
+       message = models.TextField()
+       email = models.CharField(max_length=500,)
+       created_at = models.DateTimeField(default=timezone.now)
 
+       def __str__(self):
+        return self.name
+       
