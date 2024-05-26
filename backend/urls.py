@@ -17,6 +17,8 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("api-auth/", include("rest_framework.urls")),
     path("api/",include("api.urls")),
+    path("api/checkifadmin/",CheckIfAdminWithRecievedAccessTokenView.as_view(), name="checkifAdmin"),
+
 #addedotp' 
     path('api/user/confirm/<str:email>/', ConfirmUserView.as_view(), name='confirm'),
     path('api/user/sendcode/<str:email>/', SendConfirmationCodeView.as_view(), name='send-resend-code'),

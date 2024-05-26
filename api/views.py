@@ -7,6 +7,32 @@ from rest_framework.response import Response
 from django.http import HttpResponse
 from django.core.mail import send_mail
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
+
+
+
+
+
+
+
+
+
+
+class CheckIfAdminWithRecievedAccessTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication] #this will accept the access token sent from the front 
+    # and now we will analyze it and extract if the user is admin
+
+    def get(self, request):
+        # request.user is automatically set by the JWTAuthentication
+        user = request.user
+        is_admin = user.is_staff or user.is_superuser
+        return Response({"is_admin": is_admin})
+    
+
+
 
 def hello_view(request):
     return HttpResponse("Hello")
@@ -17,7 +43,7 @@ class SendEmailAPI(APIView):
     def post(self, request, *args, **kwargs):
         subject = request.data.get('subject', '')
         message = request.data.get('message', '')
-        from_email = 'fstalert2023@gmail.com'  # Use your configured email
+        from_email = 'fstalert2023@gmail.com'  
         recipient_list = [request.data.get('to_email', '')]
 
         send_mail(subject, message, from_email, recipient_list)

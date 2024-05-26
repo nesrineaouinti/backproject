@@ -1,6 +1,13 @@
 from rest_framework import serializers
 from .models import CustomUser,Job,Application
 
+
+
+
+
+
+
+
 class RegisterUserSerializer(serializers.ModelSerializer):  #this is for sending and receiving data! 
     class Meta:
         model = CustomUser
