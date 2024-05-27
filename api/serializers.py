@@ -1,5 +1,16 @@
 from rest_framework import serializers
 from .models import CustomUser,Job,Application ,Contact
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # Add custom claims
+        token['is_staff'] = user.is_staff
+        return token
+    
 
 class RegisterUserSerializer(serializers.ModelSerializer):  #this is for sending and receiving data! 
     class Meta:
