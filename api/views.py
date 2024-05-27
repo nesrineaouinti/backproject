@@ -8,6 +8,15 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+
+
 
 
 class CheckIfAdminWithRecievedAccessTokenView(APIView):
