@@ -21,7 +21,7 @@ urlpatterns = [ #les liens hedhom bech ykono fi react ,link mi react lel views
     path('contact/create/', ContactCreateView.as_view(), name='contact-create'),
     path('statistique/', JobApplicationStatsView.as_view(), name='job-application-stats'),
     #here the /delete just to calirfy , it does nothing , what really triggers the delete is the axios.delete in frontend which goes to the view and automatically triggers the delete
-       
-
+    # gimini CV
+    path('gimini-cv/<int:job_id>/', ProcessApplicationsView.as_view(), name='application-detail'),
 
 ]
