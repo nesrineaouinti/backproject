@@ -9,7 +9,7 @@ from django.db import models
 
 
 class JobAdmin(admin.ModelAdmin):
-    list_display = ('id','title', 'description', 'summary', 'salary', 'skills', 'promoted', 'created_at', 'total_applications_display')
+    list_display = ('id','title', 'salary', 'skills', 'promoted', 'created_at', 'total_applications_display')
     readonly_fields = ('total_applications_display',)  # Make total_applications_display read-only
 
     def total_applications_display(self, obj):
