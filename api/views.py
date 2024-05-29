@@ -17,6 +17,8 @@ from django.http import JsonResponse
 
 genai.configure(api_key="AIzaSyCFgPqQH9rKlIbq7Pzsl-unqTRMrk_Qa1Y")
 
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
@@ -100,24 +102,6 @@ class ResetPasswordView(APIView):
             return Response({'detail': 'Password reset successfully.'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -245,14 +229,6 @@ class ApplicationCreateView(generics.CreateAPIView):   #set perm to isadmin !
 
 
 
-
-
-
-
-
-
-
-
 class ApplicationListView(generics.ListAPIView):
     serializer_class = ApplicationSerializer
     def get_queryset(self):
@@ -292,7 +268,12 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
         if new_status in ['accepted', 'rejected', 'in review']:
             application.status = new_status
             application.save()
+            # subject = request.data.get('subject', '')
+            # message = request.data.get('message', '')
+            # from_email = 'fstalert2023@gmail.com'  
+            # recipient_list = [request.data.get('to_email', '')]
 
+            # send_mail(subject, message, from_email, recipient_list)
             return Response({"status": "Application status updated to " + new_status}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
@@ -361,22 +342,59 @@ class JobApplicationStatsView(APIView):
 class ProcessApplicationsView(APIView):
     def get(self, request, *args, **kwargs):
         job_id = self.kwargs['job_id']  # Get job_id from the URL parameter
+        job = Job.objects.get(id=job_id)
         applications = Application.objects.filter(job__id=job_id)
         print('applications----------', applications)
-        documents = []
+        documents = {}
         for application in applications:
             text = self.extract_text_from_pdf(application.cv.path)
             print(type(text))
             if text:
-                documents.append({"id":application.id ,"text": text})
+                documents[application.id] = text
                 print('documents', documents)
 
-        best_application_ids = self.send_to_api(documents)
-        
-        best_applications = Application.objects.filter(id__in=best_application_ids)
-        serializer = ApplicationSerializer(best_applications, many=True)
-        return JsonResponse(serializer.data, safe=False)
-       
+        try:
+            candidate_contents = self.send_to_api(documents,job)
+            print('candidate_contents+++++', candidate_contents)
+
+            if not candidate_contents:
+                # Si la liste est vide, retourner une réponse vide
+                return JsonResponse([], safe=False)
+
+            best_application_ids = candidate_contents[0]
+            print('best_application_ids+++++', best_application_ids)
+
+            if not best_application_ids or best_application_ids == '[]\n':
+                # Si la liste est vide, retourner une réponse vide
+                return JsonResponse([], safe=False)
+
+            # Supprimer les crochets et les espaces de la chaîne
+            cleaned_str = best_application_ids.strip("[] \n")
+            print('cleaned_str', cleaned_str)
+
+            # Séparer les nombres en une liste
+            numbers_list = cleaned_str.split(',')
+
+            # Convertir les nombres de chaîne en entiers
+            result = [int(num) for num in numbers_list]
+
+            print('result----------', result)
+
+            # Filtrer les applications basées sur les IDs
+            best_applications = Application.objects.filter(id__in=result)
+            print('best_applications----------', best_applications)
+
+            # Sérialiser les applications filtrées
+            serializer = ApplicationSerializer(best_applications, many=True)
+
+            # Retourner les données sérialisées
+            return JsonResponse(serializer.data, safe=False)
+
+        except Exception as e:
+
+            print("An error occurred:", str(e))
+            return JsonResponse({"error": "An error occurred while processing the request."}, status=500)
+
     def extract_text_from_pdf(self, pdf_path):
         try:
             with fitz.open(pdf_path) as pdf:
@@ -388,19 +406,56 @@ class ProcessApplicationsView(APIView):
             print(f"Failed to process {pdf_path}: {str(e)}")
             return None
 
-    def send_to_api(self, text):
-        data = {
-            prompt: "Choose the best 6 qualified CVs out of all these CVs for this job based in those key words: dev ,web , ",
-            parts: documents
+    def send_to_api(self, documents,job):
+        generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 64,
+            "max_output_tokens": 8192,
+            "response_mime_type": "text/plain",
         }
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+        ]
 
-        print('data to send ++++++', data)
-        model = genai.GenerativeModel('gemini-1.0-pro-latest')
-        response = model.generate_content(data)
-        print('response--', response)
-        
-        if 'status_code' in response and response['status_code'] == 200:
-            return response.get('best_ids', [])
-        else:
-            print("API call failed:", response.get('text', 'No error text available'))
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-pro",
+            safety_settings=safety_settings,
+            generation_config=generation_config,
+        )
+ 
+        prompt_parts = [
+            f"Consider this dictionary where it has the candidate id as key and CV text format as value: {documents}. Now, give me the keys of the best qualified candidates for a  job based on this keyword : {job.title} , return only their keys and if any candidate return response vide please only keys or vide i don't want response text ."
+        ]
+        print("prompt_parts------",prompt_parts)
+        try:
+            response = model.generate_content(prompt_parts)
+            return self.handle_response(response)
+        except Exception as e:
+            print(f"Error while generating content: {str(e)}")
             return []
+
+    def handle_response(self, response):
+        print('response--', response)
+        candidates = response.candidates
+        contents = []
+        for candidate in candidates:
+            content = candidate.content
+            text_parts = [part.text for part in content.parts]
+            contents.append(''.join(text_parts))
+        return contents
