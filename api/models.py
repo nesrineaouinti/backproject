@@ -121,9 +121,9 @@ class Application(models.Model):
     
 
 class Contact(models.Model):
-       name = models.CharField(max_length=300)  
-       message = models.TextField()
-       email = models.CharField(max_length=500,)
+       name = models.CharField(max_length=300, null=True , blank=True)  
+       message = models.TextField(null=True, blank=True)
+       email = models.CharField(max_length=500,null=True, blank=True)
        created_at = models.DateTimeField(default=timezone.now)
 
        def __str__(self):

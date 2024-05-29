@@ -9,13 +9,16 @@ from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
+import google.generativeai as genai
+import os
+import fitz  # PyMuPDF
+import requests
+from django.http import JsonResponse
 
+genai.configure(api_key="AIzaSyCFgPqQH9rKlIbq7Pzsl-unqTRMrk_Qa1Y")
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-
-
-
 
 
 
@@ -276,10 +279,6 @@ class ApplicationsByJobView(generics.ListAPIView):
         job_id = self.kwargs['job_id']  # Get job_id from the URL parameter
         return Application.objects.filter(job__id=job_id)
 
-
-
-
-
 class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer 
@@ -293,6 +292,7 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
         if new_status in ['accepted', 'rejected', 'in review']:
             application.status = new_status
             application.save()
+
             return Response({"status": "Application status updated to " + new_status}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
@@ -326,6 +326,7 @@ export default ApplicationActions; '''
 
 
 class ContactCreateView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = ContactSerializer(data=request.data)
         if serializer.is_valid():
@@ -354,3 +355,52 @@ class JobApplicationStatsView(APIView):
         }
 
         return Response(data)
+    
+
+
+class ProcessApplicationsView(APIView):
+    def get(self, request, *args, **kwargs):
+        job_id = self.kwargs['job_id']  # Get job_id from the URL parameter
+        applications = Application.objects.filter(job__id=job_id)
+        print('applications----------', applications)
+        documents = []
+        for application in applications:
+            text = self.extract_text_from_pdf(application.cv.path)
+            print(type(text))
+            if text:
+                documents.append({"id":application.id ,"text": text})
+                print('documents', documents)
+
+        best_application_ids = self.send_to_api(documents)
+        
+        best_applications = Application.objects.filter(id__in=best_application_ids)
+        serializer = ApplicationSerializer(best_applications, many=True)
+        return JsonResponse(serializer.data, safe=False)
+       
+    def extract_text_from_pdf(self, pdf_path):
+        try:
+            with fitz.open(pdf_path) as pdf:
+                full_text = ""
+                for page in pdf:
+                    full_text += page.get_text()
+            return full_text.strip()
+        except Exception as e:
+            print(f"Failed to process {pdf_path}: {str(e)}")
+            return None
+
+    def send_to_api(self, text):
+        data = {
+            prompt: "Choose the best 6 qualified CVs out of all these CVs for this job based in those key words: dev ,web , ",
+            parts: documents
+        }
+
+        print('data to send ++++++', data)
+        model = genai.GenerativeModel('gemini-1.0-pro-latest')
+        response = model.generate_content(data)
+        print('response--', response)
+        
+        if 'status_code' in response and response['status_code'] == 200:
+            return response.get('best_ids', [])
+        else:
+            print("API call failed:", response.get('text', 'No error text available'))
+            return []
