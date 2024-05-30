@@ -268,12 +268,21 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
         if new_status in ['accepted', 'rejected', 'in review']:
             application.status = new_status
             application.save()
-            # subject = request.data.get('subject', '')
-            # message = request.data.get('message', '')
-            # from_email = 'fstalert2023@gmail.com'  
-            # recipient_list = [request.data.get('to_email', '')]
-
-            # send_mail(subject, message, from_email, recipient_list)
+            if new_status == 'accepted':
+                subject = 'Acceptance of application'
+                message = 'Your application has been accepted'
+                from_email = 'fstalert2023@gmail.com'  
+                recipient_list = [application.candidate.email]
+                print('recipient_list',recipient_list)
+                send_mail(subject, message, from_email, recipient_list)
+            elif new_status == 'rejected':
+                subject = 'Reject of application'
+                message = 'Sorry , Your application has been rejected'
+                from_email = 'fstalert2023@gmail.com'  
+                recipient_list = [application.candidate.email]
+                print('recipient_list',recipient_list)
+                send_mail(subject, message, from_email, recipient_list)
+            print('send_mail')
             return Response({"status": "Application status updated to " + new_status}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
