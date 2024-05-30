@@ -25,6 +25,7 @@ googleapis-common-protos==1.63.0
 grpc-google-iam-v1==0.13.0
 grpcio==1.64.0
 grpcio-status==1.62.2
+gunicorn==22.0.0
 httplib2==0.22.0
 idna==3.7
 numpy==1.26.4
@@ -52,3 +53,4 @@ tqdm==4.66.4
 typing_extensions==4.12.0
 uritemplate==4.1.1
 urllib3==2.2.1
+whitenoise==6.6.0
