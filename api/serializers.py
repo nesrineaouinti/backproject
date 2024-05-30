@@ -79,12 +79,16 @@ class ApplicationSerializer(serializers.ModelSerializer):
     job_details = serializers.ReadOnlyField(source='job.title') #these are just for ez reference instead of doing job.title , we say job_details directly
     candidate_details = serializers.ReadOnlyField(source='candidate.email')
    #job_id = serializers.ReadOnlyField(source='job.id') 
+   #added 
+    candidate_first_name = serializers.ReadOnlyField(source='candidate.first_name')
+    candidate_last_name = serializers.ReadOnlyField(source='candidate.last_name')
     
 
     class Meta:
         model = Application
-        fields = ['id', 'cv', 'cover_letter', 'status', 'job_details', 'candidate_details','created_at','candidate','job' ]  #here we put the data that will be passed in and out , we cant access job nor post it for example if we dont put it here
-        read_only_fields = ['job_details', 'candidate_details','candidate','job']  # Ensure these fields are read-only
+        fields = ['id', 'cv', 'cover_letter', 'status', 'job_details', 'candidate_details','created_at','candidate','job' ,
+                  'candidate_first_name', 'candidate_last_name']  #here we put the data that will be passed in and out , we cant access job nor post it for example if we dont put it here
+        read_only_fields = ['job_details', 'candidate_details','candidate','job', 'candidate_first_name', 'candidate_last_name']  # Ensure these fields are read-only
 
     def validate_cv(self, value):
         """
