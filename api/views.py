@@ -15,7 +15,7 @@ import fitz  # PyMuPDF
 import requests
 from django.http import JsonResponse
 
-genai.configure(api_key="AIzaSyCFgPqQH9rKlIbq7Pzsl-unqTRMrk_Qa1Y")
+genai.configure(api_key="AIzaSyBzu8NuHebpC4c8_1hnQ0ChwNJMwVAqGHc")
 
 
 
@@ -387,7 +387,7 @@ class ProcessApplicationsView(APIView):
             # Sérialiser les applications filtrées
             serializer = ApplicationSerializer(best_applications, many=True)
 
-            # Retourner les données sérialisées
+            # Retourner les données sérialisées des meuilleurs applications
             return JsonResponse(serializer.data, safe=False)
 
         except Exception as e:
@@ -438,9 +438,10 @@ class ProcessApplicationsView(APIView):
             safety_settings=safety_settings,
             generation_config=generation_config,
         )
- 
+        
+        
         prompt_parts = [
-            f"Consider this dictionary where it has the candidate id as key and CV text format as value: {documents}. Now, give me the keys of the best qualified candidates for a  job based on this keyword : {job.title} , return only their keys and if any candidate return response vide please only keys or vide i don't want response text ."
+            f"Consider this dictionary where it has the candidate id as key and CV text format as value: {documents}. Now, give me the keys of the best qualified candidates for a  job where the title is  {job.title}, and job description is {job.description}, return only their keys and if you don't find any qualified candidat for this job return empty, don't ever return text , only return integer or empty  ."
         ]
         print("prompt_parts------",prompt_parts)
         try:
